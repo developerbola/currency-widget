@@ -4,7 +4,6 @@ let pairs = [];
 let todays = {};
 
 export const render = ({ output }) => {
-  // Check if data is available
   if (!output) {
     return (
       <div className="wrapper">
@@ -25,46 +24,43 @@ export const render = ({ output }) => {
 
   todays = rateData[0] || { date: "", rate: 0, diff: "0" };
 
-  // Calculate the average rate from all data points
   const calculateAverage = () => {
-    if (rateData.length === 0) return "0";
+    if (rateData.length === 0) return 0;
     const sum = rateData.reduce((acc, item) => acc + item.rate, 0);
-    const avg = sum / rateData.length;
-    return avg.toFixed(3);
+    return sum / rateData.length;
   };
 
   const todaysRate = () => {
     return formatRate(todays.rate);
   };
 
-  // Utils
   const formatRate = (rate) => {
     const cleanNumber = Math.round(rate * 100).toString();
-    const formatted = cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return formatted;
+    return cleanNumber.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
   const diffColor = (differency) => {
     if (!differency) return "#4ade80";
-    const sym = differency.split("")[0];
-    if (sym === "-") {
-      return "#f87171";
-    }
-    return "#4ade80";
+    return differency[0] === "-" ? "#f87171" : "#4ade80";
   };
 
   const blockY = (rate, diff) => {
     if (!diff) return "0";
-  
     const average = calculateAverage();
     const deviation = rate - average;
-  
-    // Scale the deviation for better visualization
-    const scaleFactor = 1;
-  
+    const scaleFactor = 1; // Adjust for Y sensitivity
     return (-deviation * scaleFactor).toFixed(2);
   };
-  
+
+  const blockHeight = (rate) => {
+    const average = calculateAverage();
+    const deviation = Math.abs(rate - average); // Absolute difference from average
+    const baseHeight = 20; // Minimum height
+    const scaleFactor = 0.5; // Adjust this to control height sensitivity
+    const calculatedHeight = baseHeight + (deviation * scaleFactor);
+    return Math.min(40, Math.max(10, calculatedHeight)).toFixed(2); // Bound between 10-40px
+  };
+
   return (
     <div className="wrapper">
       <div className="rate rate-wrapper">
@@ -85,21 +81,18 @@ export const render = ({ output }) => {
         {rateData
           .slice()
           .reverse()
-          .map((item, i) => {
-            return (
-              <div
-                className="rate-block"
-                style={{
-                  background: `${diffColor(item.diff)}`,
-                  transform: `translateY(${blockY(item.rate, item.diff)}px)`,
-                }}
-                title={`${item.date.split("-")[2]}.${
-                  item.date.split("-")[1]
-                } - ${formatRate(item.rate)}`}
-                key={i}
-              ></div>
-            );
-          })}
+          .map((item, i) => (
+            <div
+              className="rate-block"
+              style={{
+                background: diffColor(item.diff),
+                transform: `translateY(${blockY(item.rate, item.diff)}px)`,
+                height: `${blockHeight(item.rate)}px`,
+              }}
+              title={`${item.date.split("-")[2]}.${item.date.split("-")[1]} - ${formatRate(item.rate)}`}
+              key={i}
+            ></div>
+          ))}
       </div>
     </div>
   );
@@ -134,26 +127,25 @@ export const className = `
     justify-content: space-around;
     width: 100%;
   }
-  .rate-wrapper{
+  .rate-wrapper {
     padding-left: 10px;
   }
-  .rate-chart{
+  .rate-chart {
     display: flex;
     align-items: center;
     gap: 5px;
   }
-  .rate-block{
-    height: 20px;
+  .rate-block {
     width: 6px;
     border-radius: 1.9px;
     opacity: 0.7;
+    transition: transform 0.5s ease-in-out, height 0.5s ease-in-out;
   }
   .diff {
     margin-top: 2px;
     font-size: 12px;
   }
 
-  // LOADING ANIMATION
   .loading-container {
     display: flex;
     flex-direction: column;
