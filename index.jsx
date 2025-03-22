@@ -30,7 +30,7 @@ export const render = ({ output }) => {
     if (rateData.length === 0) return "0";
     const sum = rateData.reduce((acc, item) => acc + item.rate, 0);
     const avg = sum / rateData.length;
-    return formatRate(avg.toFixed(3)).slice(0, 5);
+    return avg.toFixed(3);
   };
 
   const todaysRate = () => {
@@ -53,15 +53,18 @@ export const render = ({ output }) => {
     return "#4ade80";
   };
 
-  const blockY = (diff) => {
+  const blockY = (rate, diff) => {
     if (!diff) return "0";
-    const charArr = diff.split("");
-    if (charArr[0] === "-") {
-      return charArr.slice(1, charArr.length).join("");
-    }
-    return "-" + diff;
+  
+    const average = calculateAverage();
+    const deviation = rate - average;
+  
+    // Scale the deviation for better visualization
+    const scaleFactor = 1;
+  
+    return (-deviation * scaleFactor).toFixed(2);
   };
-
+  
   return (
     <div className="wrapper">
       <div className="rate rate-wrapper">
@@ -71,7 +74,7 @@ export const render = ({ output }) => {
         <p>{todaysRate()} UZS</p>
         <div style={{ display: "flex", gap: "7px" }}>
           <p className="diff" style={{ opacity: 0.6 }}>
-            avg: {calculateAverage()}
+            avg: {formatRate(calculateAverage()).slice(0, 5)}
           </p>
           <p style={{ color: diffColor(todays.diff) }} className="diff">
             {todays.diff}%
@@ -88,9 +91,11 @@ export const render = ({ output }) => {
                 className="rate-block"
                 style={{
                   background: `${diffColor(item.diff)}`,
-                  transform: `translateY(${blockY(item.diff)}px)`,
+                  transform: `translateY(${blockY(item.rate, item.diff)}px)`,
                 }}
-                title={item.date}
+                title={`${item.date.split("-")[2]}.${
+                  item.date.split("-")[1]
+                } - ${formatRate(item.rate)}`}
                 key={i}
               ></div>
             );
@@ -140,7 +145,7 @@ export const className = `
   .rate-block{
     height: 20px;
     width: 6px;
-    border-radius: 3px;
+    border-radius: 1.9px;
     opacity: 0.7;
   }
   .diff {
